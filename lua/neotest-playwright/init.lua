@@ -122,7 +122,7 @@ local function getJestCommand(path)
     return foundBinary
   end
 
-  return "jest"
+  return "playwright"
 end
 
 local jestConfigPattern = util.root_pattern("playwright.config.{js,ts}")
@@ -297,22 +297,24 @@ function adapter.build_spec(args)
   end
 
   local binary = getJestCommand(pos.path)
-  local config = getJestConfig(pos.path) or "playwright.config.js"
+  local config = getJestConfig(pos.path) or "playwright.config.ts"
   local command = vim.split(binary, "%s+")
+  table.insert(command, "test")
   if util.path.exists(config) then
     -- only use config if available
     table.insert(command, "--config=" .. config)
   end
 
   vim.list_extend(command, {
-    "--no-coverage",
-    "--testLocationInResults",
-    "--verbose",
-    "--json",
-    "--outputFile=" .. results_path,
-    "--testNamePattern=" .. testNamePattern,
+    "--reporter=json",
+    -- "--outputFile=" .. results_path,
+    "--grep " .. testNamePattern,
     pos.path,
   })
+
+  -- DEBUG:
+  -- print(vim.inspect(command))
+  print(table.concat(command, " "))
 
   local cwd = getCwd(pos.path)
 
