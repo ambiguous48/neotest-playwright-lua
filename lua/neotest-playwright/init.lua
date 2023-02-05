@@ -194,6 +194,10 @@ end
 local function parsed_json_to_results(data, output_file, consoleOut)
   local tests = {}
 
+  if type(data.testResults) ~= "table" then
+    return {}
+  end
+
   for _, testResult in pairs(data.testResults) do
     local testFn = testResult.name
 
@@ -318,7 +322,10 @@ function adapter.build_spec(args)
       get_default_strategy_config(args.strategy, command, cwd) or {},
       args
     ),
-    env = getEnv(args[2] and args[2].env or {}),
+    -- env = getEnv(args[2] and args[2].env or {}),
+    env = {
+      PLAYWRIGHT_JSON_OUTPUT_NAME = results_path,
+    },
   }
 end
 
