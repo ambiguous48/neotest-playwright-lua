@@ -259,19 +259,6 @@ function adapter.build_spec(args)
   end
 
   local pos = args.tree:data()
-  local testNamePattern = "'.*'"
-
-  if pos.type == "test" or pos.type == "namespace" then
-    -- pos.id in form "path/to/file::Describe text::test text"
-    local testName = string.sub(pos.id, string.find(pos.id, "::") + 2)
-    testName, _ = string.gsub(testName, "::", " ")
-    testNamePattern = "'^" .. escapeTestPattern(testName)
-    if pos.type == "test" then
-      testNamePattern = testNamePattern .. "$'"
-    else
-      testNamePattern = testNamePattern .. "'"
-    end
-  end
 
   local binary = getJestCommand(pos.path)
   local config = getJestConfig(pos.path) or "playwright.config.ts"
@@ -282,11 +269,19 @@ function adapter.build_spec(args)
     table.insert(command, "--config=" .. config)
   end
 
+  local test_filter = ""
+
+  -- use line number to target tests
+  if pos.type == "test" or pos.type == "namespace" then
+    test_filter = pos.path .. ":" .. pos.range[1] + 1
+  else
+    test_filter = pos.path
+  end
+
+  table.insert(command, test_filter)
   vim.list_extend(command, {
     "--reporter=json",
     -- "--outputFile=" .. results_path,
-    -- "--grep=" .. testNamePattern,
-    pos.path,
   })
 
   -- DEBUG:
