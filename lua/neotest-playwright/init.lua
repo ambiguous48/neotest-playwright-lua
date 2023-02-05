@@ -191,6 +191,10 @@ local function findErrorPosition(file, errStr)
   return errLine, errColumn
 end
 
+---@param data table Test output
+---@param output_file string Path to output file
+---@param consoleOut string Path to console output file
+---@return neotest.Result[] | nil
 local function parsed_json_to_results(data, output_file, consoleOut)
   local tests = {}
 
