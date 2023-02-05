@@ -273,6 +273,9 @@ function adapter.build_spec(args)
     table.insert(command, "--config=" .. config)
   end
 
+  local env = getEnv(args[2] and args[2].env or {})
+  env.PLAYWRIGHT_JSON_OUTPUT_NAME = results_path
+
   local test_filter = ""
 
   -- use line number to target tests
@@ -322,10 +325,7 @@ function adapter.build_spec(args)
       get_default_strategy_config(args.strategy, command, cwd) or {},
       args
     ),
-    -- env = getEnv(args[2] and args[2].env or {}),
-    env = {
-      PLAYWRIGHT_JSON_OUTPUT_NAME = results_path,
-    },
+    env = env,
   }
 end
 
