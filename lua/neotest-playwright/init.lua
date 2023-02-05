@@ -308,7 +308,7 @@ function adapter.build_spec(args)
   vim.list_extend(command, {
     "--reporter=json",
     -- "--outputFile=" .. results_path,
-    "--grep " .. testNamePattern,
+    "--grep=" .. testNamePattern,
     pos.path,
   })
 
