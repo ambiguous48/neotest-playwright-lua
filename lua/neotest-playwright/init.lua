@@ -198,6 +198,12 @@ end
 local function parsed_json_to_results(data, output_file, consoleOut)
   local tests = {}
 
+  -- TODO: handle global errors
+  if data.errors and #data.errors > 0 then
+    -- print error message but don't abort
+    print("WARN: Test run contains global errors")
+  end
+
   -- Vitests, playwright
   -- testResults -> suites
   -- testResult.name (absolute path) -> suite.file (relative path?)
@@ -241,26 +247,26 @@ local function parsed_json_to_results(data, output_file, consoleOut)
         },
       }
 
-      if not vim.tbl_isempty(assertionResult.failureMessages) then
-        local errors = {}
+      -- skip if test passed?
 
-        for i, failMessage in ipairs(assertionResult.failureMessages) do
-          local msg = cleanAnsi(failMessage)
-          local errorLine, errorColumn = findErrorPosition(testFn, msg)
+      local errors = {}
 
-          errors[i] = {
-            line = (errorLine or assertionResult.location.line) - 1,
-            column = (errorColumn or 1) - 1,
-            message = msg,
-          }
+      -- loop through assertionResult.tests.results.errors,
+      -- for each error, add it to tests[keyid].errors
+      for _, test in pairs(assertionResult.tests) do
+        for _, result in pairs(test.results) do
+          for i, error in pairs(result.errors) do
+            local msg = cleanAnsi(error.message)
 
-          tests[keyid].short = tests[keyid].short .. "\n" .. msg
+            errors[i] = {
+              line = error.location.line - 1,
+              column = error.location.column,
+              message = msg,
+            }
+          end
         end
-
         tests[keyid].errors = errors
       end
-      -- TODO: tree should indicate success/failure.
-
     end
   end
 
