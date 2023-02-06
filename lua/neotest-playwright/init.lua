@@ -312,9 +312,14 @@ function adapter.build_spec(args)
     -- "--outputFile=" .. results_path,
   })
 
-  -- DEBUG:
-  -- print(vim.inspect(command))
-  print(table.concat(command, " "))
+  -- add any extra args
+  local extra_args = args.extra_args
+  if extra_args then
+    for _, arg in ipairs(extra_args) do
+      table.insert(command, arg)
+    end
+  end
+
 
   local cwd = getCwd(pos.path)
 
