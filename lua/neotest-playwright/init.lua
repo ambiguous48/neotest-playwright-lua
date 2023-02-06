@@ -198,11 +198,6 @@ end
 local function parsed_json_to_results(data, output_file, consoleOut)
   local tests = {}
 
-  -- TODO: remove after implementing parse logic for playwright
-  if type(data.suites) ~= "table" then
-    return {}
-  end
-
   -- Vitests, playwright
   -- testResults -> suites
   -- testResult.name (absolute path) -> suite.file (relative path?)
@@ -211,10 +206,8 @@ local function parsed_json_to_results(data, output_file, consoleOut)
   -- assertionResult.title -> spec.title
 
   for _, testResult in pairs(data.suites) do
-    local testFn = testResult.name -- fullpath in vitest, filename in playwright
-
     for _, assertionResult in pairs(testResult.specs) do
-      local ok, name = assertionResult.status, assertionResult.title
+      local ok, name = assertionResult.ok, assertionResult.title
 
       if name == nil then
         logger.error("Failed to find parsed test result ", assertionResult)
@@ -223,7 +216,7 @@ local function parsed_json_to_results(data, output_file, consoleOut)
 
       local keyid = assertionResult.id
 
-      local status = nil
+      local status
       if ok then
         status = "passed"
       else
@@ -234,10 +227,10 @@ local function parsed_json_to_results(data, output_file, consoleOut)
         status = status,
         short = name .. ": " .. status,
         output = consoleOut,
-        -- location = {
-        --   line = assertionResult.line,
-        --   column = assertionResult.column,
-        -- },
+        location = {
+          line = assertionResult.line,
+          column = assertionResult.column,
+        },
       }
 
       if not vim.tbl_isempty(assertionResult.failureMessages) then
@@ -258,6 +251,8 @@ local function parsed_json_to_results(data, output_file, consoleOut)
 
         tests[keyid].errors = errors
       end
+      -- TODO: tree should indicate success/failure.
+
     end
   end
 
