@@ -198,38 +198,46 @@ end
 local function parsed_json_to_results(data, output_file, consoleOut)
   local tests = {}
 
-  if type(data.testResults) ~= "table" then
+  -- TODO: remove after implementing parse logic for playwright
+  if type(data.suites) ~= "table" then
     return {}
   end
 
-  for _, testResult in pairs(data.testResults) do
-    local testFn = testResult.name
+  -- Vitests, playwright
+  -- testResults -> suites
+  -- testResult.name (absolute path) -> suite.file (relative path?)
+  -- assertionResults -> specs
+  -- assertionResult.status "passed" -> spec.ok (boolean)
+  -- assertionResult.title -> spec.title
 
-    for _, assertionResult in pairs(testResult.assertionResults) do
-      local status, name = assertionResult.status, assertionResult.title
+  for _, testResult in pairs(data.suites) do
+    local testFn = testResult.name -- fullpath in vitest, filename in playwright
+
+    for _, assertionResult in pairs(testResult.specs) do
+      local ok, name = assertionResult.status, assertionResult.title
 
       if name == nil then
         logger.error("Failed to find parsed test result ", assertionResult)
         return {}
       end
 
-      local keyid = testFn
+      local keyid = assertionResult.id
 
-      for _, value in ipairs(assertionResult.ancestorTitles) do
-        keyid = keyid .. "::" .. value
-      end
-
-      keyid = keyid .. "::" .. name
-
-      if status == "pending" then
-        status = "skipped"
+      local status = nil
+      if ok then
+        status = "passed"
+      else
+        status = "failed"
       end
 
       tests[keyid] = {
         status = status,
         short = name .. ": " .. status,
         output = consoleOut,
-        location = assertionResult.location,
+        -- location = {
+        --   line = assertionResult.line,
+        --   column = assertionResult.column,
+        -- },
       }
 
       if not vim.tbl_isempty(assertionResult.failureMessages) then
@@ -318,7 +326,7 @@ function adapter.build_spec(args)
         local new_results = stream_data()
         local ok, parsed = pcall(vim.json.decode, new_results, { luanil = { object = true } })
 
-        if not ok or not parsed.testResults then
+        if not ok or not parsed.suites then
           return {}
         end
 
