@@ -205,7 +205,12 @@ local function parsed_json_to_results(data, output_file, consoleOut)
   -- assertionResult.status "passed" -> spec.ok (boolean)
   -- assertionResult.title -> spec.title
 
+  -- TODO: handle nested suites/specs
   for _, testResult in pairs(data.suites) do
+    local root = data.config.rootDir
+    local file = testResult.file
+    local testFn = util.path.join(root, file)
+
     for _, assertionResult in pairs(testResult.specs) do
       local ok, name = assertionResult.ok, assertionResult.title
 
@@ -214,7 +219,9 @@ local function parsed_json_to_results(data, output_file, consoleOut)
         return {}
       end
 
-      local keyid = assertionResult.id
+      local keyid = testFn
+
+      keyid = keyid .. "::" .. name
 
       local status
       if ok then
@@ -227,6 +234,7 @@ local function parsed_json_to_results(data, output_file, consoleOut)
         status = status,
         short = name .. ": " .. status,
         output = consoleOut,
+        -- TODO: how is location used?
         location = {
           line = assertionResult.line,
           column = assertionResult.column,
